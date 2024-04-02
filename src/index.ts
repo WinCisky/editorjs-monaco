@@ -62,6 +62,13 @@ class MonacoCodeTool {
             });
             monaco.editor.setTheme('vs-dark');
             this.languages = monaco.languages.getLanguages().map((lang: languages.ILanguageExtensionPoint) => lang.id);
+            monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+                diagnosticCodesToIgnore: [
+                    2792, // suppress error for missing import
+                    6192, // suppress unised import warning
+                    6133, // suppress unused variable warning
+                ]
+            });
             if (this.data.wordwrap) {
                 this.monacoEditor.updateOptions({ wordWrap: 'on' });
             }
