@@ -7,6 +7,7 @@ interface MonacoEditorData {
     height: number;
     wordwrap: boolean;
     minimap: boolean;
+    linenumbers: boolean;
 }
 
 class MonacoCodeTool {
@@ -19,8 +20,8 @@ class MonacoCodeTool {
 
     constructor({ data }: { data: MonacoEditorData }) {
         const isNew = Object.values(data).length === 0;
-        this.data = isNew 
-            ? { code: '', language: '', height: 1, wordwrap: true, minimap: false} 
+        this.data = isNew
+            ? { code: '', language: '', height: 1, wordwrap: true, minimap: false, linenumbers: true }
             : data;
         if (isNew) {
             this.shouldFocus = true;
@@ -75,6 +76,9 @@ class MonacoCodeTool {
             if (!this.data.minimap) {
                 this.monacoEditor.updateOptions({ minimap: { enabled: false } });
             }
+            if (!this.data.linenumbers) {
+                this.monacoEditor.updateOptions({ lineNumbers: 'off' });
+            }
             this.monacoEditor.updateOptions({ scrollBeyondLastLine: false });
 
 
@@ -117,6 +121,8 @@ class MonacoCodeTool {
 
         const wrapIcon = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" /></svg>';
 
+        const lineIcon = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm0 0c0 1.657 1.007 3 2.25 3S21 13.657 21 12a9 9 0 1 0-2.636 6.364M16.5 12V8.25" /></svg>';
+
         const settings = [];
 
         // add toggle wordwrap
@@ -128,8 +134,23 @@ class MonacoCodeTool {
             onActivate: () => {
                 if (this.monacoEditor) {
                     this.data.wordwrap = !this.data.wordwrap;
-                    this.monacoEditor.updateOptions({ wordWrap: this.data.wordwrap ? 'on' : 'off'});
+                    this.monacoEditor.updateOptions({ wordWrap: this.data.wordwrap ? 'on' : 'off' });
                     this._updateHeight(this.monacoEditor);
+                }
+            }
+        });
+
+        // add toggle linenumbers
+        settings.push({
+            icon: lineIcon,
+            label: 'Line numbers',
+            toggle: 'linenumbers',
+            isActive: this.data.linenumbers,
+            onActivate: () => {
+                if (this.monacoEditor) {
+                    console.log('toggle line numbers', !this.data.linenumbers);
+                    this.data.linenumbers = !this.data.linenumbers;
+                    this.monacoEditor.updateOptions({ lineNumbers: this.data.linenumbers ? 'on' : 'off'});
                 }
             }
         });
@@ -163,7 +184,7 @@ class MonacoCodeTool {
 
         settings.push(...langs);
         return settings;
-      }
+    }
 
     save() {
         if (!this.monacoEditor) {
@@ -175,7 +196,8 @@ class MonacoCodeTool {
             language: this.data.language || '',
             height: 3,
             wordwrap: this.data.wordwrap,
-            minimap: this.data.minimap
+            minimap: this.data.minimap,
+            linenumbers: this.data.linenumbers
         };
     }
 
