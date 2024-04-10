@@ -19,7 +19,12 @@ class MonacoCodeTool {
   private container: HTMLElement | null = null;
   private shouldFocus: boolean = false;
 
-  constructor({ data }: { data: MonacoEditorData }) {
+  constructor(
+    { data, config }: {
+      data: MonacoEditorData;
+      config: { languages: string[] };
+    },
+  ) {
     const isNew = Object.values(data).length === 0;
     this.data = isNew
       ? {
@@ -29,7 +34,7 @@ class MonacoCodeTool {
         wordwrap: true,
         minimap: false,
         linenumbers: true,
-        languages: null,
+        languages: config.languages || null,
       }
       : data;
     if (isNew) {

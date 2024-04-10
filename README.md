@@ -24,6 +24,29 @@ var editor = EditorJS({
 });
 ```
 
+## Configuration
+```javascript
+var editor = EditorJS({
+  // ...
+  tools: {
+    // ...
+    codeBlock: {
+      // @ts-ignore
+      class: MonacoCodeTool,
+      config: {
+        // default configuration
+        languages: [
+          'plaintext',
+          'javascript',
+          'typescript',
+          // ...
+        ],
+      },
+    },
+  },
+});
+```
+
 ## Output data
 ```json
 {
