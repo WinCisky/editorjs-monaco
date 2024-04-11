@@ -1,6 +1,6 @@
 # Editor.js - Monaco
 
-This is an EditorJs wrapper for Monaco.
+EditorJs wrapper for Monaco code block.
 
 ## Demo
 ![Code Block demo](output.gif)
