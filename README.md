@@ -41,6 +41,7 @@ var editor = EditorJS({
           'typescript',
           // ...
         ],
+        theme: 'vs-dark',
       },
     },
   },
@@ -53,9 +54,13 @@ var editor = EditorJS({
     "type": "codeBlock",
     "data": {
         "code": "import EditorJS from '@editorjs/editorjs';",
-        "language": "javascript",
+        "diff": null,
+        "language": "",
         "wordwrap": true,
-        "minimap": false
+        "minimap": false,
+        "linenumbers": true,
+        "theme": "vs-dark",
+        "languages": "javascript",
     }
 }
 ```
