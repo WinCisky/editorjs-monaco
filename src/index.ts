@@ -1,5 +1,8 @@
 import loader from "@monaco-editor/loader";
-import { type editor, type languages } from "monaco-editor";
+import {
+  type editor,
+  type languages
+} from "monaco-editor";
 
 import {
   languageIcon,
@@ -8,6 +11,7 @@ import {
   diffIcon,
   wrapIcon,
   codeIcon,
+  stretchIcon,
 } from "./icons";
 
 type IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
@@ -43,6 +47,10 @@ interface MonacoEditorData {
    */
   linenumbers: boolean;
   /**
+   * Use stretched view or not
+   */
+  stretched: boolean;
+  /**
    * Theme to use
    */
   theme: MonacoTheme;
@@ -54,6 +62,9 @@ interface MonacoEditorData {
 
 class MonacoCodeTool {
   private readonly data: MonacoEditorData;
+  private block: any;
+  private api: any;
+  private monaco: any;
   /**
    * Monaco editor instance
    * If null, it is a diff editor
@@ -78,12 +89,31 @@ class MonacoCodeTool {
     overviewRulerLanes: 0
   };
 
+  private readonly monacoEnvironment = {
+    // Override the default key binding for the Ctrl+/ combination
+    overrideServices: {
+      keybindingService: {
+        // Remove the existing key binding for Ctrl+/
+        removeKeybinding: (keybinding: any) => {
+          if (keybinding.label === 'editor.action.commentLine') {
+            return true;
+          }
+          return false;
+        }
+      }
+    }
+  };
+
   constructor(
-    { data, config }: {
+    { data, config, block, api }: {
       data: MonacoEditorData;
       config: { languages: string[], theme: string };
+      block: any;
+      api: any;
     },
   ) {
+    this.block = block;
+    this.api = api;
     const isNew = Object.values(data).length === 0;
     let theme: MonacoTheme;
     switch (config.theme) {
@@ -107,6 +137,7 @@ class MonacoCodeTool {
         wordwrap: true,
         minimap: false,
         linenumbers: true,
+        stretched: false,
         theme: theme,
         languages: config.languages || null,
       }
@@ -183,6 +214,22 @@ class MonacoCodeTool {
       this.editorCode?.updateOptions({ lineNumbers: "off" });
       this.editorDiff?.updateOptions({ lineNumbers: "off" });
     }
+
+    if (this.editorCode) {
+      this.editorCode.addCommand(
+        this.monaco.KeyMod.CtrlCmd | this.monaco.KeyCode.Slash,
+        () => {
+          this.api.toolbar.toggleBlockSettings();
+        }
+      );
+    } else if (this.editorDiff) {
+      this.editorDiff.addCommand(
+        this.monaco.KeyMod.CtrlCmd | this.monaco.KeyCode.Slash,
+        () => {
+          this.api.toolbar.toggleBlockSettings();
+        }
+      );
+    }
   }
 
   render() {
@@ -192,19 +239,20 @@ class MonacoCodeTool {
     container.style.marginBottom = "10px";
 
     loader.init().then((monaco) => {
+      this.monaco = monaco;
       if (!this.data.diff) {
         this.editorCode = monaco.editor.create(container, {
           ...this.defaultOptions,
           value: this.data.code || "// type your code...",
           language: this.data.language || "plaintext",
-        });
+        }, this.monacoEnvironment);
       } else {
         this.editorDiff = monaco.editor.createDiffEditor(container, {
           ...this.defaultOptions,
           renderSideBySide: true,
           readOnly: false,
           originalEditable: true,
-        });
+        }, this.monacoEnvironment);
         this.editorDiff.setModel({
           original: monaco.editor.createModel(
             this.data.code || "// type your code...",
@@ -230,7 +278,9 @@ class MonacoCodeTool {
           6133, // suppress unused variable warning
         ],
       });
-      
+
+      this.block.stretched = this.data.stretched;
+
       this._updateEditorDisplayOptions();
       this._updateHeight();
       this._registerHeightUpdate();
@@ -247,6 +297,7 @@ class MonacoCodeTool {
   }
 
   _setLanguage(language: string) {
+    this.data.language = language;
     if (!this.editorCode && !this.editorDiff) return;
     loader.init().then((monaco) => {
       if (this.editorCode) {
@@ -306,6 +357,77 @@ class MonacoCodeTool {
       },
     });
 
+    // add toggle diff
+    settings.push({
+      icon: diffIcon,
+      label: "Diff",
+      toggle: "diff",
+      isActive: typeof this.data.diff === 'string' ? true : false,
+      onActivate: () => {
+
+        loader.init().then((monaco) => {
+          if (!this.container) return;
+
+          if (this.data.diff) {
+            const code = this.editorDiff?.getOriginalEditor().getModel()?.getValue() || this.data.code;
+            // switch to normal editor
+            this.data.diff = null;
+            this.editorDiff?.dispose();
+            this.editorDiff = null;
+
+            this.editorCode = monaco.editor.create(this.container, {
+              ...this.defaultOptions,
+              value: code,
+              language: this.data.language || "plaintext",
+            }, this.monacoEnvironment);
+
+          } else {
+            const code = this.editorCode?.getValue() || this.data.code;
+            // switch to diff editor
+            this.data.diff = code;
+            this.editorCode?.dispose();
+            this.editorCode = null;
+
+            this.editorDiff = monaco.editor.createDiffEditor(this.container, {
+              ...this.defaultOptions,
+              renderSideBySide: true,
+              readOnly: false,
+              originalEditable: true,
+            }, this.monacoEnvironment);
+
+            this.editorDiff.setModel({
+              original: monaco.editor.createModel(
+                code,
+                this.data.language || "plaintext",
+              ),
+              modified: monaco.editor.createModel(
+                code,
+                this.data.language || "plaintext",
+              ),
+            });
+          }
+
+          this._updateEditorDisplayOptions();
+          this._updateHeight();
+          this._registerHeightUpdate();
+        });
+      },
+    });
+
+    // add toggle stretch
+    settings.push({
+      icon: stretchIcon,
+      label: "Stretch",
+      toggle: "stretch",
+      isActive: this.data.stretched,
+      onActivate: () => {
+        this.data.stretched = !this.data.stretched;
+        if (this.block) {
+          this.block.stretched = this.data.stretched;
+        }
+      },
+    });
+
     // add toggle minimap
     settings.push({
       icon: mapIcon,
@@ -321,60 +443,6 @@ class MonacoCodeTool {
           this.editorDiff.updateOptions({ minimap: { enabled: this.data.minimap } });
           this._updateHeight();
         }
-      },
-    });
-
-    settings.push({
-      icon: diffIcon,
-      label: "Diff",
-      toggle: "diff",
-      isActive: typeof this.data.diff === 'string' ? true : false,
-      onActivate: () => {
-
-        loader.init().then((monaco) => {
-          if (!this.container) return;
-
-          if (this.data.diff) {
-            // switch to normal editor
-            this.data.diff = null;
-            this.editorDiff?.dispose();
-            this.editorDiff = null;
-
-            this.editorCode = monaco.editor.create(this.container, {
-              ...this.defaultOptions,
-              value: this.data.code,
-              language: this.data.language || "plaintext",
-            });
-
-          } else {
-            // switch to diff editor
-            this.data.diff = this.data.code;
-            this.editorCode?.dispose();
-            this.editorCode = null;
-
-            this.editorDiff = monaco.editor.createDiffEditor(this.container, {
-              ...this.defaultOptions,
-              renderSideBySide: true,
-              readOnly: false,
-              originalEditable: true,
-            });
-
-            this.editorDiff.setModel({
-              original: monaco.editor.createModel(
-                this.data.code,
-                this.data.language || "plaintext",
-              ),
-              modified: monaco.editor.createModel(
-                this.data.diff || "",
-                this.data.language || "plaintext",
-              ),
-            });
-          }
-
-          this._updateEditorDisplayOptions();
-          this._updateHeight();
-          this._registerHeightUpdate();
-        });
       },
     });
 
@@ -419,6 +487,7 @@ class MonacoCodeTool {
       wordwrap: this.data.wordwrap,
       minimap: this.data.minimap,
       linenumbers: this.data.linenumbers,
+      stretched: this.data.stretched,
       theme: this.data.theme,
       languages: this.data.languages,
     };
