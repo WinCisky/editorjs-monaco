@@ -12,6 +12,7 @@ import {
   wrapIcon,
   codeIcon,
   stretchIcon,
+  copyIcon
 } from "./icons";
 
 type IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
@@ -77,7 +78,10 @@ class MonacoCodeTool {
   private editorDiff: IStandaloneDiffEditor | null = null;
   private languages: string[] = [];
   private container: HTMLElement | null = null;
+  private copyBtnCode: HTMLElement | null = null;
+  private copyBtnDiff: HTMLElement | null = null;
   private shouldFocus: boolean = false;
+  private copyBtn: boolean = true;
 
   private readonly defaultOptions: IStandaloneEditorConstructionOptions = {
     scrollbar: {
@@ -107,14 +111,16 @@ class MonacoCodeTool {
   constructor(
     { data, config, block, api }: {
       data: MonacoEditorData;
-      config: { languages: string[], theme: string };
+      config: { languages: string[], theme: string, copybtn: boolean};
       block: any;
       api: any;
     },
   ) {
     this.block = block;
     this.api = api;
-    const isNew = Object.values(data).length === 0;
+    // null coalescing for backwards compatibility
+    this.copyBtn = config.copybtn ?? true;
+
     let theme: MonacoTheme;
     switch (config.theme) {
       case "vs":
@@ -129,6 +135,7 @@ class MonacoCodeTool {
         break;
     }
 
+    const isNew = Object.values(data).length === 0;
     this.data = isNew
       ? {
         code: "",
@@ -265,7 +272,8 @@ class MonacoCodeTool {
         });
       }
 
-      monaco.editor.setTheme(this.data.theme);
+      // null coalescing for backwards compatibility
+      monaco.editor.setTheme(this.data.theme ?? "vs-dark");
 
       this.languages = monaco.languages.getLanguages().map((
         lang: languages.ILanguageExtensionPoint,
@@ -281,6 +289,7 @@ class MonacoCodeTool {
 
       this.block.stretched = this.data.stretched;
 
+      this._addCopyBtn(container);
       this._updateEditorDisplayOptions();
       this._updateHeight();
       this._registerHeightUpdate();
@@ -294,6 +303,100 @@ class MonacoCodeTool {
 
     this.container = container;
     return container;
+  }
+
+  _createCopyBtn() {
+    const copyBtn = document.createElement("button");
+    copyBtn.innerHTML = copyIcon;
+    copyBtn.style.position = "absolute";
+    copyBtn.style.top = "5px";
+    copyBtn.style.right = "5px";
+    copyBtn.style.padding = "5px";
+    copyBtn.style.border = "none";
+    copyBtn.style.backgroundColor = "#333";
+    copyBtn.style.color = "#fff";
+    copyBtn.style.cursor = "pointer";
+    copyBtn.style.borderRadius = "5px";
+    copyBtn.style.zIndex = "11";
+    copyBtn.style.display = "none";
+
+    // white theme
+    if (this.data.theme === "vs") {
+      copyBtn.style.backgroundColor = "#fff";
+      copyBtn.style.color = "#333";
+    }
+
+    return copyBtn;
+  }
+
+  /**
+   * Add copy button to the container on top right, show only when mouse is over
+   * @param container The container to add the copy button to
+   */
+  _addCopyBtn(container: HTMLElement) {
+
+    if (!this.copyBtn) return;
+    
+    this.copyBtnCode?.remove();
+    this.copyBtnDiff?.remove();
+
+    if (this.editorCode) {
+
+      const copyBtnCode = this._createCopyBtn();
+      this.copyBtnCode = copyBtnCode;
+
+      container.addEventListener("mouseover", () => {
+        copyBtnCode.style.display = "block";
+      });
+      container.addEventListener("mouseleave", () => {
+        copyBtnCode.style.display = "none";
+      });
+
+      copyBtnCode.addEventListener("click", () => {
+        const code = this.editorCode?.getValue() || this.data.code;
+        navigator.clipboard.writeText(code);
+      });
+
+      container.appendChild(copyBtnCode);
+
+    } else if (this.editorDiff) {
+
+      const copyBtnCode = this._createCopyBtn();
+      this.copyBtnCode = copyBtnCode;
+
+      const copyBtnDiff = this._createCopyBtn();
+      this.copyBtnDiff = copyBtnDiff;
+
+      const containerOriginal = container.getElementsByClassName("editor original")[0];
+      const containerModified = container.getElementsByClassName("editor modified")[0];
+
+      containerOriginal?.addEventListener("mouseover", () => {
+        copyBtnCode.style.display = "block";
+      });
+      containerOriginal?.addEventListener("mouseleave", () => {
+        copyBtnCode.style.display = "none";
+      });
+      containerModified?.addEventListener("mouseover", () => {
+        copyBtnDiff.style.display = "block";
+      });
+      containerModified?.addEventListener("mouseleave", () => {
+        copyBtnDiff.style.display = "none";
+      });
+
+      copyBtnCode.addEventListener("click", () => {
+        const code = this.editorDiff?.getOriginalEditor().getModel()?.getValue() || this.data.code;
+        navigator.clipboard.writeText(code);
+      });
+
+      copyBtnDiff.addEventListener("click", () => {
+        const code = this.editorDiff?.getModifiedEditor().getModel()?.getValue() || "";
+        navigator.clipboard.writeText(code);
+      });
+
+      containerOriginal?.appendChild(copyBtnCode);
+      containerModified?.appendChild(copyBtnDiff);
+
+    }
   }
 
   _setLanguage(language: string) {
@@ -407,6 +510,7 @@ class MonacoCodeTool {
             });
           }
 
+          this._addCopyBtn(this.container);
           this._updateEditorDisplayOptions();
           this._updateHeight();
           this._registerHeightUpdate();
