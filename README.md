@@ -25,7 +25,7 @@ var editor = EditorJS({
 ```
 
 ## Configuration
-```javascript
+```typescript
 var editor = EditorJS({
   // ...
   tools: {
@@ -34,14 +34,19 @@ var editor = EditorJS({
       // @ts-ignore
       class: MonacoCodeTool,
       config: {
-        // default configuration
+        // languages subset
+        // default is all languages
         languages: [
           'plaintext',
           'javascript',
           'typescript',
           // ...
         ],
+        // vs | vs-dark | hc-black
+        // default is vs-dark
         theme: 'vs-dark',
+        // default is true
+        copybtn: false,
       },
     },
   },
@@ -53,14 +58,15 @@ var editor = EditorJS({
 {
     "type": "codeBlock",
     "data": {
-        "code": "import EditorJS from '@editorjs/editorjs';",
+        "code": "// type your code...",
         "diff": null,
         "language": "",
         "wordwrap": true,
         "minimap": false,
         "linenumbers": true,
+        "stretched": false,
         "theme": "vs-dark",
-        "languages": "javascript",
+        "languages": null
     }
 }
 ```
