@@ -288,6 +288,9 @@ class MonacoCodeTool {
       });
 
       this.block.stretched = this.data.stretched;
+      // fix for stretched block
+      this.editorCode?.layout();
+      this.editorDiff?.layout();
 
       this._addCopyBtn(container);
       this._updateEditorDisplayOptions();
@@ -529,6 +532,9 @@ class MonacoCodeTool {
         if (this.block) {
           this.block.stretched = this.data.stretched;
         }
+        // fix for stretched block
+        this.editorCode?.layout();
+        this.editorDiff?.layout();
       },
     });
 
