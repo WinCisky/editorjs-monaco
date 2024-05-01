@@ -1,6 +1,6 @@
 {
   "name": "@ssimo/editorjs-monaco",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -11,11 +11,13 @@
   ],
   "types": "dist/index.d.mts",
   "scripts": {
+    "dev": "tsup src/index.ts --dts --format cjs,esm --out-dir dist --watch & http-server",
     "build": "tsup src/index.ts --minify --dts --format cjs,esm --out-dir dist",
     "lint": "tsc"
   },
   "devDependencies": {
     "@monaco-editor/loader": "^1.4.0",
+    "http-server": "^14.1.1",
     "monaco-editor": "^0.47.0",
     "tsup": "^8.0.2",
     "typescript": "^5.4.3"

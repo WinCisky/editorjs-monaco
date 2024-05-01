@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EditorJs-Monaco test env</title>
+    <!-- favicon -->
+    <link rel="icon" href="favicon.svg" type="image/x-icon">
+</head>
+<body>
+    <style>
+        #editorjs {
+            width: 100%;
+            height: 500px;
+            border: 2px solid red;
+        }
+    </style>
+    <div id="editorjs"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@latest"></script>
+    <script type="module">
+        import MonacoCodeTool from './dist/index.mjs';
+
+        const editor = new EditorJS({
+            holder: 'editorjs',
+            data: {
+                blocks: [
+                    {
+                        type: 'codeBlock',
+                        data: {
+                            code: 'console.log("Hello, world!")',
+                            language: 'javascript',
+                            diff: null,
+                            wordwrap: true,
+                            minimap: false,
+                            linenumbers: true,
+                            stretched: false,
+                            languages: null
+                        },
+                    },
+                ],
+            },
+            tools: {
+                // ...
+                codeBlock: {
+                    class: MonacoCodeTool,
+                    config: {
+                        // languages subset
+                        // default is all languages
+                        languages: [
+                        'plaintext',
+                        'javascript',
+                        'typescript',
+                        // ...
+                        ],
+                        // vs | vs-dark | hc-black
+                        // default is vs-dark
+                        theme: 'vs-dark',
+                        // default is true
+                        copybtn: false,
+                    },
+                },
+            },
+        });
+    </script>
+</body>
+</html>

@@ -65,7 +65,6 @@ var editor = EditorJS({
         "minimap": false,
         "linenumbers": true,
         "stretched": false,
-        "theme": "vs-dark",
         "languages": null
     }
 }

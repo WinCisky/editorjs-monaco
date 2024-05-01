@@ -52,10 +52,6 @@ interface MonacoEditorData {
    */
   stretched: boolean;
   /**
-   * Theme to use
-   */
-  theme: MonacoTheme;
-  /**
    * Languages to use
    */
   languages?: string[] | null;
@@ -82,6 +78,7 @@ class MonacoCodeTool {
   private copyBtnDiff: HTMLElement | null = null;
   private shouldFocus: boolean = false;
   private copyBtn: boolean = true;
+  private theme: MonacoTheme = "vs-dark";
 
   private readonly defaultOptions: IStandaloneEditorConstructionOptions = {
     scrollbar: {
@@ -134,6 +131,7 @@ class MonacoCodeTool {
         theme = "vs-dark";
         break;
     }
+    this.theme = theme;
 
     const isNew = Object.values(data).length === 0;
     this.data = isNew
@@ -145,7 +143,6 @@ class MonacoCodeTool {
         minimap: false,
         linenumbers: true,
         stretched: false,
-        theme: theme,
         languages: config.languages || null,
       }
       : data;
@@ -273,7 +270,7 @@ class MonacoCodeTool {
       }
 
       // null coalescing for backwards compatibility
-      monaco.editor.setTheme(this.data.theme ?? "vs-dark");
+      monaco.editor.setTheme(this.theme ?? "vs-dark");
 
       this.languages = monaco.languages.getLanguages().map((
         lang: languages.ILanguageExtensionPoint,
@@ -324,7 +321,7 @@ class MonacoCodeTool {
     copyBtn.style.display = "none";
 
     // white theme
-    if (this.data.theme === "vs") {
+    if (this.theme === "vs") {
       copyBtn.style.backgroundColor = "#fff";
       copyBtn.style.color = "#333";
     }
@@ -598,7 +595,6 @@ class MonacoCodeTool {
       minimap: this.data.minimap,
       linenumbers: this.data.linenumbers,
       stretched: this.data.stretched,
-      theme: this.data.theme,
       languages: this.data.languages,
     };
   }
